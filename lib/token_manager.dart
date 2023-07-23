@@ -1,0 +1,35 @@
+
+import 'package:ensemble/ensemble.dart';
+import 'package:ensemble/framework/placeholder/token_manager.dart';
+import 'package:ensemble/framework/storage_manager.dart';
+
+class TokenManager implements TokenManagerBase {
+  static final TokenManager _instance = TokenManager._internal();
+  TokenManager._internal();
+  factory TokenManager() {
+    return _instance;
+  }
+
+  @override
+  Future<void> updateServiceTokens(ServiceName serviceName, String accessToken,
+      {String? refreshToken}) async {
+    await StorageManager().writeSecurely(
+        key: '${serviceName.name}_accessToken', value: accessToken);
+    if (refreshToken != null) {
+      await StorageManager().writeSecurely(
+          key: '${serviceName.name}_refreshToken', value: refreshToken);
+    }
+  }
+
+  @override
+  Future<OAuthServiceToken?> getServiceTokens(ServiceName serviceName) async {
+    String? accessToken = await StorageManager().readSecurely('${serviceName.name}_accessToken');
+    if (accessToken != null) {
+      return OAuthServiceToken(
+          accessToken: accessToken,
+          refreshToken: await StorageManager().readSecurely(
+              '${serviceName.name}_refreshToken'));
+    }
+    return null;
+  }
+}

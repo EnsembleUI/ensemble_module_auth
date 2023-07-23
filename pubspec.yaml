@@ -33,7 +33,7 @@ dependencies:
   sign_in_with_apple: ^5.0.0
   firebase_auth: ^4.7.1
   firebase_core: ^2.15.0
-
+  flutter_web_auth_2: ^2.1.4
 
 dev_dependencies:
   flutter_test:
