@@ -1,6 +1,6 @@
 import 'package:ensemble/framework/error_handling.dart';
-import 'package:ensemble/framework/placeholder/auth_context_manager.dart';
 import 'package:ensemble/framework/storage_manager.dart';
+import 'package:ensemble/framework/stub/auth_context_manager.dart';
 import 'package:ensemble/util/utils.dart';
 import 'package:ensemble_ts_interpreter/invokables/invokable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -68,7 +68,7 @@ class AuthManager {
 }
 
 /// publicly exposed as Context
-class AuthContextManager with Invokable implements AuthContextManagerBase {
+class AuthContextManagerImpl with Invokable implements AuthContextManager {
 
   @override
   Map<String, Function> getters() {

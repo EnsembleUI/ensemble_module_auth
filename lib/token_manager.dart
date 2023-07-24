@@ -1,12 +1,12 @@
 
 import 'package:ensemble/ensemble.dart';
-import 'package:ensemble/framework/placeholder/token_manager.dart';
+import 'package:ensemble/framework/stub/token_manager.dart';
 import 'package:ensemble/framework/storage_manager.dart';
 
-class TokenManager implements TokenManagerBase {
-  static final TokenManager _instance = TokenManager._internal();
-  TokenManager._internal();
-  factory TokenManager() {
+class TokenManagerImpl implements TokenManager {
+  static final TokenManagerImpl _instance = TokenManagerImpl._internal();
+  TokenManagerImpl._internal();
+  factory TokenManagerImpl() {
     return _instance;
   }
 

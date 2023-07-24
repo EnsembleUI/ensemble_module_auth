@@ -5,15 +5,15 @@ import 'dart:developer' as developer;
 
 import 'package:ensemble/ensemble.dart';
 import 'package:ensemble/framework/error_handling.dart';
-import 'package:ensemble/framework/placeholder/oauth_controller.dart';
-import 'package:ensemble/framework/placeholder/token_manager.dart';
+import 'package:ensemble/framework/stub/oauth_controller.dart';
+import 'package:ensemble/framework/stub/token_manager.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
-class OAuthController implements OAuthControllerBase {
+class OAuthControllerImpl implements OAuthController {
   static const accessTokenKey = '_accessToken';
   static const refreshTokenKey = '_refreshToken';
 

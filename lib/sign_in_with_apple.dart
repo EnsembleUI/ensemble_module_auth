@@ -9,21 +9,20 @@ import 'package:ensemble/framework/storage_manager.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
 import 'package:ensemble/widget/helpers/controllers.dart';
-import 'package:ensemble/widget/stub_widgets.dart';
-import 'package:ensemble_auth/auth_manager.dart';
+import 'package:ensemble/widget/stub_widgets.dart' as ensemble;
 import 'package:ensemble_ts_interpreter/invokables/invokable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
-class EnsembleSignInWithApple extends StatefulWidget
+class SignInWithAppleImpl extends StatefulWidget
     with
         Invokable,
         HasController<SignInWithAppleController, SignInWithAppleState>
-    implements SignInWithAppleBase {
+    implements ensemble.SignInWithApple {
 
-  EnsembleSignInWithApple({super.key});
+  SignInWithAppleImpl({super.key});
 
   final SignInWithAppleController _controller = SignInWithAppleController();
 
@@ -55,7 +54,7 @@ class SignInWithAppleController extends WidgetController {
   EnsembleAction? onError;
 }
 
-class SignInWithAppleState extends WidgetState<EnsembleSignInWithApple> {
+class SignInWithAppleState extends WidgetState<SignInWithAppleImpl> {
   // Widget? displayWidget;
 
   @override

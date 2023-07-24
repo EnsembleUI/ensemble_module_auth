@@ -25,14 +25,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 
-class SignInWithGoogle extends StatefulWidget
+class SignInWithGoogleImpl extends StatefulWidget
     with
         Invokable,
-        HasController<SignInWithGoogleController, SignInWithGoogleState>
-    implements SignInWithGoogleBase {
+        HasController<SignInWithGoogleController, SignInWithGoogleImplState>
+    implements SignInWithGoogle {
 
 
-  SignInWithGoogle({super.key});
+  SignInWithGoogleImpl({super.key});
 
   final SignInWithGoogleController _controller = SignInWithGoogleController();
 
@@ -40,7 +40,7 @@ class SignInWithGoogle extends StatefulWidget
   get controller => _controller;
 
   @override
-  State<StatefulWidget> createState() => SignInWithGoogleState();
+  State<StatefulWidget> createState() => SignInWithGoogleImplState();
 
   @override
   Map<String, Function> getters() => {};
@@ -73,7 +73,7 @@ class SignInWithGoogleController extends WidgetController {
   EnsembleAction? onError;
 }
 
-class SignInWithGoogleState extends WidgetState<SignInWithGoogle> {
+class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
   late GoogleSignIn _googleSignIn;
   Widget? displayWidget;
 
