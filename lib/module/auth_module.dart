@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:ensemble/framework/stub/auth_context_manager.dart';
 import 'package:ensemble/framework/stub/oauth_controller.dart';
 import 'package:ensemble/framework/stub/token_manager.dart';
@@ -8,9 +10,17 @@ import 'package:ensemble_auth/auth_manager.dart';
 import 'package:ensemble_auth/sign_in_with_apple.dart';
 import 'package:ensemble_auth/sign_in_with_google.dart';
 import 'package:ensemble_auth/token_manager.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:get_it/get_it.dart';
 
 class AuthModuleImpl implements AuthModule {
+  static final AuthModuleImpl _instance = AuthModuleImpl._internal();
+  AuthModuleImpl._internal();
+  factory AuthModuleImpl() {
+    return _instance;
+  }
+
+
   @override
   void init() {
     GetIt.I.registerFactory<AuthContextManager>(() => AuthContextManagerImpl());
@@ -19,5 +29,7 @@ class AuthModuleImpl implements AuthModule {
     GetIt.I.registerSingleton<TokenManager>(TokenManagerImpl());
     GetIt.I.registerFactory<OAuthController>(() => OAuthControllerImpl());
   }
+
+
 
 }

@@ -5,11 +5,13 @@ import 'dart:io';
 import 'package:ensemble/framework/action.dart';
 import 'package:ensemble/framework/error_handling.dart';
 import 'package:ensemble/framework/event.dart';
+import 'package:ensemble/framework/extensions.dart';
 import 'package:ensemble/framework/storage_manager.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
 import 'package:ensemble/widget/helpers/controllers.dart';
 import 'package:ensemble/widget/stub_widgets.dart' as ensemble;
+import 'package:ensemble_auth/auth_manager.dart';
 import 'package:ensemble_ts_interpreter/invokables/invokable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -40,30 +42,26 @@ class SignInWithAppleImpl extends StatefulWidget
 
   @override
   Map<String, Function> setters() => {
-        // 'widget': (widgetDef) => _controller.widgetDef = widgetDef,
+        'provider': (value) => _controller.provider =
+            SignInProvider.values.from(value),
         'onAuthenticated': (action) => _controller.onAuthenticated =
             EnsembleAction.fromYaml(action, initiator: this),
+        'onSignedIn': (action) => _controller.onSignedIn =
+            EnsembleAction.fromYaml(action, initiator: this),
         'onError': (action) => _controller.onError =
-            EnsembleAction.fromYaml(action, initiator: this)
+            EnsembleAction.fromYaml(action, initiator: this),
       };
 }
 
 class SignInWithAppleController extends WidgetController {
-  // dynamic widgetDef;
+  SignInProvider? provider;
   EnsembleAction? onAuthenticated;
+  EnsembleAction? onSignedIn;
   EnsembleAction? onError;
 }
 
 class SignInWithAppleState extends WidgetState<SignInWithAppleImpl> {
-  // Widget? displayWidget;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // build the display widget
-    // displayWidget = DataScopeWidget.getScope(context)
-    //     ?.buildWidgetFromDefinition(widget._controller.widgetDef);
-  }
 
   @override
   Widget buildWidget(BuildContext context) {
@@ -97,48 +95,84 @@ class SignInWithAppleState extends WidgetState<SignInWithAppleImpl> {
     return button;
   }
 
-  void _onAuthenticated(AuthorizationCredentialAppleID credential) {
+  void _onAuthenticated(AuthorizationCredentialAppleID credential) async {
     if (credential.identityToken == null) {
       throw RuntimeError('Invalid token.');
     }
 
-    // Apple don't have any access token related.
+    AuthenticatedUser user = _getAuthenticatedUser(credential);
 
-    // update the user information in storage.
-    // Note that Apple only send the name and email the first time, so it's
-    // important not to accidentally clear them  out unless the user id is different.
-    // Also note on Android the userIdentifier is not specified, so we need
-    // to use the idToken's sub as the user ID
-    final storage = StorageManager();
-    String? name;
-    String? userId = _getUserId(credential.identityToken!);
-    if (userId != null && userId != storage.getUserId()) {
-      var names = [credential.givenName, credential.familyName]
-          .where((name) => name != null && name.isNotEmpty)
-          .toList();
-      if (names.isNotEmpty) {
-        name = names.join(' ');
-      }
-
-      StorageManager().updateAuthenticatedUser(context,
-          user: AuthenticatedUser(
-              provider: AuthProvider.apple, id: userId, name: name,
-              email: credential.email));
-    }
-
-    // trigger the callback
+    // trigger the callback. This can be used to sign in on the server
     if (widget._controller.onAuthenticated != null) {
       ScreenController()
           .executeAction(context, widget._controller.onAuthenticated!,
-              event: EnsembleEvent(widget, data: {
-                'id': userId,
-                'name': name,
-                'email': credential.email,
+          event: EnsembleEvent(widget, data: {
+            'user': user,
 
-                // server can verify and decode to get user info, useful for Sign In
-                'idToken': credential.identityToken
-              }));
+            // server can verify and decode to get user info, useful for Sign In
+            'idToken': credential.identityToken
+          }));
     }
+
+
+    if (widget._controller.provider != SignInProvider.server) {
+      // Apple don't have any access token related.
+      await AuthManager().signInWithCredential(
+          context,
+          user: user,
+          idToken: credential.identityToken);
+
+      // trigger onSignIn callback
+      if (widget._controller.onSignedIn != null) {
+        ScreenController()
+            .executeAction(context, widget._controller.onSignedIn!,
+            event: EnsembleEvent(widget, data: {
+              'user': user
+            }));
+      }
+
+    }
+
+  }
+
+  /// Note that Apple only send the name and email the first time, so it's
+  /// important not to accidentally clear them out unless the user id is different.
+  AuthenticatedUser _getAuthenticatedUser(AuthorizationCredentialAppleID credential) {
+    // on Android the userIdentifier is not specified, so we need
+    // to use the idToken's sub as the user ID
+    String? userId = credential.userIdentifier ?? _getUserId(credential.identityToken!);
+    if (userId == null) {
+      throw RuntimeError(
+          'Error: The required user id is not provided by Apple.');
+    }
+    // combine first/last to display name
+    String? name;
+    var names = [credential.givenName, credential.familyName]
+        .where((name) => name != null && name.isNotEmpty)
+        .toList();
+    if (names.isNotEmpty) {
+      name = names.join(' ');
+    }
+    String? email = credential.email;
+
+    // Apple only send the name and email the first time,
+    // so if the user id is the same, use the old the info if needed to.
+    AuthenticatedUser? currentUser = AuthManager().getCurrentUser();
+    if (userId == currentUser?.id) {
+      if (name == null || name.isEmpty) {
+        name = currentUser!.name;
+      }
+      if (email == null || email.isEmpty) {
+        email = currentUser!.email;
+      }
+    }
+
+    return AuthenticatedUser(
+        client: SignInClient.apple,
+        provider: widget._controller.provider,
+        id: userId,
+        name: name,
+        email: email);
   }
 
   /// simply decode the idToken and get the sub to use as userId.

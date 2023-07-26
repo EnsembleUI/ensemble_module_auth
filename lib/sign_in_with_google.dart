@@ -5,6 +5,7 @@ import 'package:ensemble/ensemble.dart';
 import 'package:ensemble/framework/action.dart';
 import 'package:ensemble/framework/error_handling.dart';
 import 'package:ensemble/framework/event.dart';
+import 'package:ensemble/framework/extensions.dart';
 import 'package:ensemble/framework/storage_manager.dart';
 import 'package:ensemble/framework/view/page.dart';
 import 'package:ensemble/framework/widget/widget.dart';
@@ -51,7 +52,8 @@ class SignInWithGoogleImpl extends StatefulWidget
   @override
   Map<String, Function> setters() => {
         'widget': (widgetDef) => _controller.widgetDef = widgetDef,
-        'authenticateOnly': (value) => _controller.authenticateOnly = Utils.getBool(value, fallback: _controller.authenticateOnly),
+        'provider': (value) => _controller.provider =
+            SignInProvider.values.from(value),
         'onAuthenticated': (action) => _controller.onAuthenticated =
             EnsembleAction.fromYaml(action, initiator: this),
         'onSignedIn': (action) => _controller.onSignedIn =
@@ -67,7 +69,7 @@ class SignInWithGoogleController extends WidgetController {
   dynamic widgetDef;
   List<String> scopes = [];
 
-  bool authenticateOnly = false;
+  SignInProvider? provider;
   EnsembleAction? onAuthenticated;
   EnsembleAction? onSignedIn;
   EnsembleAction? onError;
@@ -82,9 +84,8 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
     super.initState();
 
     _googleSignIn = GoogleSignIn(
-      clientId: '1045872208865-suc24i3cqf71ltulsjfr6734sh9t9fkm.apps.googleusercontent.com',
-        // clientId: getClientId(),
-        // serverClientId: getServerClientId(),
+        clientId: getClientId(),
+        serverClientId: getServerClientId(),
         scopes: widget._controller.scopes);
     _googleSignIn.onCurrentUserChanged.listen((account) async {
       if (account != null) {
@@ -100,35 +101,19 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
           isAuthorized =
               await _googleSignIn.canAccessScopes(widget._controller.scopes);
         }
-        // await _onAuthenticated(account, googleAuthentication);
-        await _onAuthenticated2(account, googleAuthentication);
+        await _onAuthenticated(account, googleAuthentication);
       } else {
         //log("TO BE IMPLEMENTED: log out");
       }
     });
   }
 
-  Future<void> _onAuthenticated2(GoogleSignInAccount account,
-      GoogleSignInAuthentication googleAuthentication) async {
-
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuthentication.accessToken,
-      idToken: googleAuthentication.idToken,
-    );
-    final UserCredential authResult = await FirebaseAuth.instanceFor(app: Firebase.app('customFirebase')).signInWithCredential(credential);
-    // final UserCredential authResult = await FirebaseAuth.instance.signInWithCredential(credential);
-    final User? user = authResult.user;
-
-    log(user.toString());
-  }
-
   Future<void> _onAuthenticated(GoogleSignInAccount account,
       GoogleSignInAuthentication googleAuthentication) async {
 
-
-
     AuthenticatedUser user = AuthenticatedUser(
-        provider: AuthProvider.google,
+        client: SignInClient.google,
+        provider: widget._controller.provider,
         id: account.id,
         name: account.displayName,
         email: account.email,
@@ -149,15 +134,20 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
           }));
     }
 
-    // we implicitly sign in unless user said to only authenticate
-    if (!widget._controller.authenticateOnly) {
+    /// we don't sign in with Custom provider. User can call their server
+    /// to create the server, then onResponse they can manually call signIn
+    if (widget._controller.provider != SignInProvider.server) {
       AuthToken? token;
       if (googleAuthentication.accessToken != null) {
         token = AuthToken(
             tokenType: TokenType.bearerToken,
             token: googleAuthentication.accessToken!);
       }
-      //await AuthManager().signInWithCredential(context, SignInProvider.. user: user, token: token);
+      await AuthManager().signInWithCredential(
+          context,
+          user: user,
+          idToken: googleAuthentication.idToken,
+          token: token);
 
       // trigger onSignIn callback
       if (widget._controller.onSignedIn != null) {
