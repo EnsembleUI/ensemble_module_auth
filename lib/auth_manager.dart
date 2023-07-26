@@ -117,15 +117,16 @@ class AuthManager with UserAuthentication {
         }
       } else if (user.provider == SignInProvider.auth0) {
         // sign out with Auth0
-      }
+      } else {
+        // If we don't use the provider, sign out with the signIn clients
+        if (user.client == SignInClient.google) {
+          // TODO: save the instance of recreate the Google Sign In
+          //await GoogleSignIn().signOut();
+        } else if (user.client == SignInClient.apple) {
+          // there is no sign out for Apple
+        } else if (user.client == SignInClient.microsoft) {
 
-      // now sign out with the Sign In Client
-      if (user.client == SignInClient.google) {
-        await GoogleSignIn().signOut();
-      } else if (user.client == SignInClient.apple) {
-        // there is no sign out for Apple
-      } else if (user.client == SignInClient.microsoft) {
-
+        }
       }
 
       // then remove user from storage
