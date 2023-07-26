@@ -12,6 +12,7 @@ import 'package:ensemble_ts_interpreter/invokables/invokable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -80,7 +81,9 @@ class AuthManager with UserAuthentication {
 
   Future<FirebaseApp> _initializeFirebaseSignIn() async {
     FirebaseOptions? options;
-    if (Platform.isIOS) {
+    if (kIsWeb) {
+      options = Ensemble().getAccount()?.firebaseConfig?.webConfig;
+    } else if (Platform.isIOS) {
       options = Ensemble().getAccount()?.firebaseConfig?.iOSConfig;
     } else if (Platform.isAndroid) {
       options = Ensemble().getAccount()?.firebaseConfig?.androidConfig;
