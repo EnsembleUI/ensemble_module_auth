@@ -31,6 +31,10 @@ class AuthManager with UserAuthentication {
       {required AuthenticatedUser user,
       String? idToken, AuthToken? token}) async {
 
+    if (idToken == null) {
+      throw RuntimeError('ID Token is required for Sign In');
+    }
+
     // sign in locally if a SignInProvider is not specified
     if (user.provider == null || user.provider == SignInProvider.local) {
       return _signInLocally(context, user: user);
@@ -60,12 +64,16 @@ class AuthManager with UserAuthentication {
 
   Future<void> _signInWithFirebase(BuildContext context,
       {required AuthenticatedUser user,
-      required String? idToken,
+      required String idToken,
       AuthToken? token}) async {
+
+    // initialize Firebase once
     customFirebaseApp ??= await _initializeFirebaseSignIn();
 
-    final credential = GoogleAuthProvider.credential(
-        idToken: idToken, accessToken: token?.token);
+    final credential = _formatCredential(
+        client: user.client,
+        idToken: idToken,
+        accessToken: token?.token);
     final UserCredential authResult =
         await FirebaseAuth.instanceFor(app: customFirebaseApp!)
             .signInWithCredential(credential);
@@ -77,6 +85,16 @@ class AuthManager with UserAuthentication {
     _enrichUserFromFirebase(user: user, firebaseInfo: firebaseUser);
     await _updateCurrentUser(context, user);
 
+  }
+
+  OAuthCredential _formatCredential({SignInClient? client, required String idToken, String? accessToken}) {
+    if (client == SignInClient.google) {
+      return GoogleAuthProvider.credential(
+          idToken: idToken, accessToken: accessToken);
+    } else if (client == SignInClient.apple) {
+      return OAuthProvider('apple.com').credential(idToken: idToken);
+    }
+    throw RuntimeError("Invalid Sign In Client");
   }
 
   Future<FirebaseApp> _initializeFirebaseSignIn() async {
