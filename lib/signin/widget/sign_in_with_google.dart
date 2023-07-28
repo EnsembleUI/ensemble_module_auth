@@ -13,8 +13,9 @@ import 'package:ensemble/screen_controller.dart';
 import 'package:ensemble/util/utils.dart';
 import 'package:ensemble/widget/helpers/controllers.dart';
 import 'package:ensemble/widget/stub_widgets.dart';
-import 'package:ensemble_auth/auth_manager.dart';
-import 'package:ensemble_auth/google/google_sign_in_button.dart';
+import 'package:ensemble_auth/signin/auth_manager.dart';
+import 'package:ensemble_auth/signin/widget/google/google_sign_in_button.dart';
+import 'package:ensemble_auth/signin/widget/sign_in_button.dart';
 import 'package:ensemble_ts_interpreter/invokables/invokable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -31,8 +32,7 @@ class SignInWithGoogleImpl extends StatefulWidget
         Invokable,
         HasController<SignInWithGoogleController, SignInWithGoogleImplState>
     implements SignInWithGoogle {
-
-
+  static const defaultLabel = 'Sign in with Google';
   SignInWithGoogleImpl({super.key});
 
   final SignInWithGoogleController _controller = SignInWithGoogleController();
@@ -65,7 +65,7 @@ class SignInWithGoogleImpl extends StatefulWidget
       };
 }
 
-class SignInWithGoogleController extends WidgetController {
+class SignInWithGoogleController extends SignInButtonController {
   dynamic widgetDef;
   List<String> scopes = [];
 
@@ -178,14 +178,20 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // build the display widget
-    displayWidget = DataScopeWidget.getScope(context)
-        ?.buildWidgetFromDefinition(widget._controller.widgetDef);
+    if (widget._controller.widgetDef != null) {
+      displayWidget = DataScopeWidget.getScope(context)
+          ?.buildWidgetFromDefinition(widget._controller.widgetDef);
+    }
   }
 
   @override
   Widget buildWidget(BuildContext context) {
     return buildGoogleSignInButton(
-        mobileWidget: displayWidget, onPressed: _handleSignIn);
+        mobileWidget: displayWidget ?? SignInButton(
+            defaultLabel: SignInWithGoogleImpl.defaultLabel,
+            buttonController: widget._controller,
+            onTap: _handleSignIn),
+        onPressed: _handleSignIn);
   }
 
   String getClientId() {

@@ -6,12 +6,15 @@ import 'package:ensemble/framework/action.dart';
 import 'package:ensemble/framework/error_handling.dart';
 import 'package:ensemble/framework/event.dart';
 import 'package:ensemble/framework/extensions.dart';
+import 'package:ensemble/framework/model.dart';
 import 'package:ensemble/framework/storage_manager.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
+import 'package:ensemble/util/utils.dart';
 import 'package:ensemble/widget/helpers/controllers.dart';
 import 'package:ensemble/widget/stub_widgets.dart' as ensemble;
-import 'package:ensemble_auth/auth_manager.dart';
+import 'package:ensemble_auth/signin/auth_manager.dart';
+import 'package:ensemble_auth/signin/widget/sign_in_button.dart';
 import 'package:ensemble_ts_interpreter/invokables/invokable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -23,7 +26,7 @@ class SignInWithAppleImpl extends StatefulWidget
         Invokable,
         HasController<SignInWithAppleController, SignInWithAppleState>
     implements ensemble.SignInWithApple {
-
+  static const defaultLabel = 'Sign in with Apple';
   SignInWithAppleImpl({super.key});
 
   final SignInWithAppleController _controller = SignInWithAppleController();
@@ -50,14 +53,21 @@ class SignInWithAppleImpl extends StatefulWidget
             EnsembleAction.fromYaml(action, initiator: this),
         'onError': (action) => _controller.onError =
             EnsembleAction.fromYaml(action, initiator: this),
+
+        // styles only apply to default button
+        'buttonStyle': (value) => _controller.buttonStyle = SignInWithAppleButtonStyle.values.from(value)
       };
 }
 
-class SignInWithAppleController extends WidgetController {
+class SignInWithAppleController extends SignInButtonController {
   SignInProvider? provider;
   EnsembleAction? onAuthenticated;
   EnsembleAction? onSignedIn;
   EnsembleAction? onError;
+
+  // these styles apply only to default button
+  SignInWithAppleButtonStyle? buttonStyle;
+
 }
 
 class SignInWithAppleState extends WidgetState<SignInWithAppleImpl> {
@@ -65,24 +75,24 @@ class SignInWithAppleState extends WidgetState<SignInWithAppleImpl> {
 
   @override
   Widget buildWidget(BuildContext context) {
-    var button = SignInWithAppleButton(
-      onPressed: () async {
-        try {
-          final credential =
-              await SignInWithApple.getAppleIDCredential(scopes: [
-            AppleIDAuthorizationScopes.email,
-            AppleIDAuthorizationScopes.fullName,
-          ]);
-          _onAuthenticated(credential);
-        } catch (e) {
-          log(e.toString());
-          if (widget._controller.onError != null) {
-            ScreenController()
-                .executeAction(context, widget._controller.onError!);
+    var button = AppleSignInButton(
+        buttonController: widget._controller,
+        onTap: () async {
+          try {
+            final credential =
+                await SignInWithApple.getAppleIDCredential(scopes: [
+              AppleIDAuthorizationScopes.email,
+              AppleIDAuthorizationScopes.fullName,
+            ]);
+            _onAuthenticated(credential);
+          } catch (e) {
+            log(e.toString());
+            if (widget._controller.onError != null) {
+              ScreenController()
+                  .executeAction(context, widget._controller.onError!);
+            }
           }
-        }
-      },
-    );
+        });
 
     // TODO: add support for Android / Web
     if (kIsWeb || Platform.isAndroid) {
