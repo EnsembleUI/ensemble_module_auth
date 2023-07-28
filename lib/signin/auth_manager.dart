@@ -380,7 +380,8 @@ class AuthenticatedUser with Invokable {
 enum SignInClient {
   google,
   apple,
-  microsoft
+  microsoft,
+  auth0
 }
 
 enum SignInProvider {
