@@ -9,6 +9,7 @@ import 'package:ensemble_auth/connect/OAuthController.dart';
 import 'package:ensemble_auth/connect/widget/connect_with_google.dart';
 import 'package:ensemble_auth/signin/auth_manager.dart';
 import 'package:ensemble_auth/signin/widget/sign_in_with_apple.dart';
+import 'package:ensemble_auth/signin/widget/sign_in_with_auth0.dart';
 import 'package:ensemble_auth/signin/widget/sign_in_with_google.dart';
 import 'package:ensemble_auth/token_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -28,6 +29,7 @@ class AuthModuleImpl implements AuthModule {
     GetIt.I.registerFactory<SignInWithGoogle>(() => SignInWithGoogleImpl());
     GetIt.I.registerFactory<SignInWithApple>(() => SignInWithAppleImpl());
     GetIt.I.registerFactory<ConnectWithGoogle>(() => ConnectWithGoogleImpl());
+    GetIt.I.registerFactory<SignInWithAuth0>(() => SignInWithAuth0Impl());
     GetIt.I.registerSingleton<TokenManager>(TokenManagerImpl());
     GetIt.I.registerFactory<OAuthController>(() => OAuthControllerImpl());
   }

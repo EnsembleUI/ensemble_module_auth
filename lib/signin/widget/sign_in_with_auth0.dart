@@ -13,15 +13,16 @@ import 'package:ensemble/widget/stub_widgets.dart';
 import 'package:ensemble_auth/signin/auth_manager.dart';
 import 'package:ensemble_auth/signin/widget/sign_in_button.dart';
 import 'package:ensemble_ts_interpreter/invokables/invokable.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:auth0_flutter/auth0_flutter.dart';
+import 'package:flutter/cupertino.dart';
 
 
 class SignInWithAuth0Impl extends StatefulWidget
     with
-        Invokable
-    implements SignInWithAuth0, HasController<SignInWithAuth0ImplController, SignInWithAuth0ImplState> {
+        Invokable,
+        HasController<SignInWithAuth0ImplController, SignInWithAuth0ImplState>
+    implements SignInWithAuth0 {
   static const defaultLabel = 'Sign In';
   SignInWithAuth0Impl({super.key});
 
@@ -54,12 +55,6 @@ class SignInWithAuth0Impl extends StatefulWidget
     'scopes': (value) => _controller.scopes =
         Utils.getListOfStrings(value) ?? _controller.scopes,
   };
-
-  @override
-  List<String> passthroughSetters() {
-    // TODO: implement passthroughSetters
-    throw UnimplementedError();
-  }
 }
 
 class SignInWithAuth0ImplController extends SignInButtonController {
@@ -97,6 +92,12 @@ class SignInWithAuth0ImplState extends WidgetState<SignInWithAuth0Impl> {
 
   @override
   Widget buildWidget(BuildContext context) {
+    if (displayWidget != null) {
+      return GestureDetector(
+        onTap: _handleSignIn,
+        child: displayWidget,
+      );
+    }
     return SignInButton(
         defaultLabel: SignInWithAuth0Impl.defaultLabel,
         buttonController: widget._controller,
