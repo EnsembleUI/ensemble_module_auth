@@ -25,9 +25,10 @@ dependencies:
     sdk: flutter
 
   ensemble:
-    git:
-      url: https://github.com/EnsembleUI/ensemble.git
-      ref: main
+    path: ../../starter/framework
+#    git:
+#      url: https://github.com/EnsembleUI/ensemble.git
+#      ref: main
 
   ensemble_ts_interpreter:
     git:
@@ -41,6 +42,7 @@ dependencies:
   firebase_core: ^2.15.0
   flutter_web_auth_2: ^2.1.4
   flutter_svg: ^2.0.7
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

@@ -54,6 +54,7 @@ class SignInButton extends StatelessWidget {
       child: CupertinoButton(
           padding: EdgeInsets.zero,
           borderRadius: buttonController.borderRadius.getValue(),
+          onPressed: onTap,
           child: Container(
             decoration: _decoration,
             padding: const EdgeInsets.symmetric(
@@ -63,8 +64,7 @@ class SignInButton extends StatelessWidget {
             child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: children),
-          ),
-          onPressed: () {}),
+          )),
     );
   }
 
