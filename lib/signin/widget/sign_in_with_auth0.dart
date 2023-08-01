@@ -126,7 +126,7 @@ class SignInWithAuth0ImplState extends WidgetState<SignInWithAuth0Impl> {
     AuthenticatedUser user = AuthenticatedUser(
         client: SignInClient.auth0,
         provider: widget._controller.provider,
-        id: userProfile.email,
+        id: userProfile.sub,
         name: userProfile.name,
         email: userProfile.email,
         photo: userProfile.pictureUrl?.toString());
