@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:ensemble/ensemble.dart';
@@ -69,7 +70,6 @@ class SignInWithAuth0ImplController extends SignInButtonController {
 }
 
 class SignInWithAuth0ImplState extends WidgetState<SignInWithAuth0Impl> {
-  late Credentials? _credentials;
   late Auth0 _auth0;
   Widget? displayWidget;
 
@@ -107,21 +107,18 @@ class SignInWithAuth0ImplState extends WidgetState<SignInWithAuth0Impl> {
 
   Future<void> _handleSignIn() async {
     try {
-      _credentials = await _auth0.webAuthentication(scheme: widget._controller.scheme).login();
+      final credsManager = Auth0CredentialsManager();
+      final authManager = _auth0.webAuthentication(scheme: widget._controller.scheme);
+      final credentials = await authManager.login();
+      credsManager.credentials = credentials;
+      credsManager.authManager = authManager;
 
-      if (_credentials != null) {
-        _onAuthenticated(_credentials!);
+      if (credentials != null) {
+        _onAuthenticated(credentials);
       }
     } on Exception catch (e, s) {
       debugPrint('login error: $e - stack: $s');
     }
-  }
-
-  // TODO: handle signout
-  Future<void> _handleSignOut() async {
-    await _auth0.webAuthentication(scheme: widget._controller.scheme).logout();
-
-    _credentials = null;
   }
 
   Future<void> _onAuthenticated(Credentials credentials) async {
@@ -166,31 +163,56 @@ class SignInWithAuth0ImplState extends WidgetState<SignInWithAuth0Impl> {
       }
     }
   }
+}
 
-  String getAuthDomain() {
-    final authDomain = Ensemble().getSignInServices()?.serverUri;
-    if (authDomain == null) {
-      throw LanguageError("Auth0 SignIn provider domain is required.",
-          recovery: "Please check your configuration.");
-    }
-    return authDomain;
+
+// Singleton reference to auth scheme and credentials being used
+class Auth0CredentialsManager {
+  static final Auth0CredentialsManager _instance = Auth0CredentialsManager._internal();
+
+  late WebAuthentication authManager;
+  late Credentials? credentials;
+
+  Auth0CredentialsManager._internal();
+
+  factory Auth0CredentialsManager() {
+    return _instance;
   }
-  String getClientId() {
-    SignInCredential? credential =
-    Ensemble().getSignInServices()?.signInCredentials?[ServiceName.auth0];
-    String? clientId;
-    // Auth0 seems to use the same clientId for all three clients, but leaving for flexibility
-    if (kIsWeb) {
-      clientId = credential?.webClientId;
-    } else if (Platform.isAndroid) {
-      clientId = credential?.androidClientId;
-    } else if (Platform.isIOS) {
-      clientId = credential?.iOSClientId;
-    }
-    if (clientId != null) {
-      return clientId;
-    }
-    throw LanguageError("Auth0 SignIn provider client ID is required.",
+
+  bool hasCredentials() {
+    return credentials != null;
+  }
+
+  Future<void> signOut() async {
+    await authManager.logout();
+    credentials = null;
+  }
+}
+
+String getAuthDomain() {
+  final authDomain = Ensemble().getSignInServices()?.serverUri;
+  if (authDomain == null) {
+    throw LanguageError("Auth0 SignIn provider domain is required.",
         recovery: "Please check your configuration.");
   }
+  return authDomain;
+}
+
+String getClientId() {
+  SignInCredential? credential =
+  Ensemble().getSignInServices()?.signInCredentials?[ServiceName.auth0];
+  String? clientId;
+  // Auth0 seems to use the same clientId for all three clients, but leaving for flexibility
+  if (kIsWeb) {
+    clientId = credential?.webClientId;
+  } else if (Platform.isAndroid) {
+    clientId = credential?.androidClientId;
+  } else if (Platform.isIOS) {
+    clientId = credential?.iOSClientId;
+  }
+  if (clientId != null) {
+    return clientId;
+  }
+  throw LanguageError("Auth0 SignIn provider client ID is required.",
+      recovery: "Please check your configuration.");
 }

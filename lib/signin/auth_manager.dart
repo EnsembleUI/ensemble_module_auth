@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:auth0_flutter/auth0_flutter.dart';
 import 'package:ensemble/ensemble.dart';
 import 'package:ensemble/framework/error_handling.dart';
 import 'package:ensemble/framework/extensions.dart';
@@ -8,6 +9,7 @@ import 'package:ensemble/framework/storage_manager.dart';
 import 'package:ensemble/framework/stub/auth_context_manager.dart';
 import 'package:ensemble/screen_controller.dart';
 import 'package:ensemble/util/utils.dart';
+import 'package:ensemble_auth/signin/widget/sign_in_with_auth0.dart';
 import 'package:ensemble_ts_interpreter/invokables/invokable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -137,7 +139,7 @@ class AuthManager with UserAuthentication {
           await FirebaseAuth.instanceFor(app: customFirebaseApp!).signOut();
         }
       } else if (user.provider == SignInProvider.auth0) {
-        // sign out with Auth0
+        await Auth0CredentialsManager().signOut();
       } else {
         // If we don't use the provider, sign out with the signIn clients
         if (user.client == SignInClient.google) {
@@ -165,7 +167,7 @@ class AuthManager with UserAuthentication {
           return FirebaseAuth.instanceFor(app: customFirebaseApp!).currentUser != null;
         }
       } else if (user.provider == SignInProvider.auth0) {
-        // check status with Auth0
+        return Auth0CredentialsManager().hasCredentials();
       }
 
       // fallback to using the client to check for status
