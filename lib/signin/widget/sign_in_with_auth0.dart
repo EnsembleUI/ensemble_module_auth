@@ -5,6 +5,7 @@ import 'package:ensemble/framework/action.dart';
 import 'package:ensemble/framework/error_handling.dart';
 import 'package:ensemble/framework/event.dart';
 import 'package:ensemble/framework/extensions.dart';
+import 'package:ensemble/framework/stub/oauth_controller.dart';
 import 'package:ensemble/framework/view/page.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
@@ -199,7 +200,7 @@ String getAuthDomain() {
 
 String getClientId() {
   SignInCredential? credential =
-  Ensemble().getSignInServices()?.signInCredentials?[ServiceName.auth0];
+  Ensemble().getSignInServices()?.signInCredentials?[OAuthService.auth0];
   String? clientId;
   // Auth0 seems to use the same clientId for all three clients, but leaving for flexibility
   if (kIsWeb) {
