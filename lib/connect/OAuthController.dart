@@ -164,9 +164,10 @@ class OAuthControllerImpl implements OAuthController {
       'code': code,
       'code_verifier': codeVerifier
     };
-    // inject the client secret on Web
+    // inject the client secret on Web. Note that PKCE technically don't required
+    // clientSecret, but some clients (i.e. Google) still require it.
     if (kIsWeb) {
-      String? webClientSecret = await StorageManager().readSecurely('services.oauth.${service.name}.web.clientSecret');
+      String? webClientSecret = await StorageManager().readSecurely('SERVICES_OAUTH_${service.name}_WEB_CLIENT_SECRET');
       if (webClientSecret != null && webClientSecret.isNotEmpty) {
         body['client_secret'] = webClientSecret;
       }
