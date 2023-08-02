@@ -3,7 +3,6 @@ import 'package:ensemble/framework/stub/oauth_controller.dart';
 import 'package:ensemble/framework/stub/token_manager.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
-import 'package:ensemble/widget/helpers/controllers.dart';
 import 'package:ensemble/widget/stub_widgets.dart';
 import 'package:ensemble_auth/connect/OAuthController.dart';
 import 'package:ensemble_auth/connect/widget/connect.dart';
@@ -11,20 +10,20 @@ import 'package:ensemble_auth/signin/widget/sign_in_button.dart';
 import 'package:ensemble_ts_interpreter/invokables/invokable.dart';
 import 'package:flutter/material.dart';
 
-class ConnectWithGoogleImpl extends StatefulWidget
+class ConnectWithMicrosoftImpl extends StatefulWidget
     with
         Invokable,
-        HasController<ConnectWithGoogleController, ConnectWithGoogleState>
-    implements ConnectWithGoogle {
-  static const defaultLabel = 'Continue with Google';
-  ConnectWithGoogleImpl({super.key});
+        HasController<ConnectWithMicrosoftController, ConnectWithMicrosoftState>
+    implements ConnectWithMicrosoft {
+  static const defaultLabel = 'Continue with Microsoft';
+  ConnectWithMicrosoftImpl({super.key});
 
-  final ConnectWithGoogleController _controller = ConnectWithGoogleController();
+  final ConnectWithMicrosoftController _controller = ConnectWithMicrosoftController();
   @override
-  ConnectWithGoogleController get controller => _controller;
+  ConnectWithMicrosoftController get controller => _controller;
 
   @override
-  State<StatefulWidget> createState() => ConnectWithGoogleState();
+  State<StatefulWidget> createState() => ConnectWithMicrosoftState();
 
 
   @override
@@ -51,11 +50,11 @@ class ConnectWithGoogleImpl extends StatefulWidget
   }
 }
 
-class ConnectWithGoogleController extends ConnectController{
+class ConnectWithMicrosoftController extends ConnectController{
 
 }
 
-class ConnectWithGoogleState extends WidgetState<ConnectWithGoogleImpl> {
+class ConnectWithMicrosoftState extends WidgetState<ConnectWithMicrosoftImpl> {
 
   @override
   void initState() {
@@ -67,14 +66,14 @@ class ConnectWithGoogleState extends WidgetState<ConnectWithGoogleImpl> {
   @override
   Widget buildWidget(BuildContext context) {
     return SignInButton(
-        defaultLabel: ConnectWithGoogleImpl.defaultLabel,
-        iconName: 'google_logo.svg',
+        defaultLabel: ConnectWithMicrosoftImpl.defaultLabel,
+        iconName: 'microsoft_logo.svg',
         buttonController: widget._controller,
         onTap: startAuthFlow);
   }
 
   void startAuthFlow() async {
-    // a scope is required for Google
+    // a scope is required for Microsoft
     List<String> scopes = ['openid'];
     if (widget._controller.initialScopes != null) {
       scopes.addAll(widget._controller.initialScopes!);
@@ -82,7 +81,7 @@ class ConnectWithGoogleState extends WidgetState<ConnectWithGoogleImpl> {
 
     OAuthServiceToken? token = await OAuthControllerImpl().authorize(
         context,
-        OAuthService.google,
+        OAuthService.microsoft,
         scope: ConnectUtils.getScopesAsString(scopes),
         forceNewTokens: true,   // this always force the flow again
         tokenExchangeAPI: widget._controller.tokenExchangeAPI);

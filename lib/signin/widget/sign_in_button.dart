@@ -10,9 +10,11 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 // Button that mimic Apple button's styles for consistency
 class SignInButton extends StatelessWidget {
-  const SignInButton({super.key, required this.defaultLabel, required this.buttonController, required this.onTap});
+  const SignInButton({super.key, required this.defaultLabel,
+    required this.buttonController, required this.onTap, this.iconName});
 
   final String defaultLabel;
+  final String? iconName;
   final SignInButtonController buttonController;
   final VoidCallback onTap;
 
@@ -20,18 +22,9 @@ class SignInButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // content height per Apple's guideline (at least for font size)
     var contentHeight = buttonController.height * 0.43;
-    const iconPaddingRight = 6.0;
     const iconPaddingLeft = 4.0;
+    const iconPaddingRight = 6.0;
 
-    List<Widget> children;
-    var icon = Padding(
-        padding: const EdgeInsets.only(
-            left: iconPaddingLeft,
-            right: iconPaddingRight),
-        child: SvgPicture.asset('assets/google_logo.svg',
-            package: 'ensemble_auth',
-            height: contentHeight,
-            width: contentHeight));
     var text = Text(buttonController.overrideLabel ?? defaultLabel,
         textAlign: TextAlign.center,
         style: TextStyle(
@@ -39,14 +32,28 @@ class SignInButton extends StatelessWidget {
             fontFamily: '.SF Pro Text',
             color: Colors.black,
             letterSpacing: -0.41));
-    if (buttonController.iconAlignment == IconAlignment.left) {
-      children = [
-        icon,
-        Expanded(child: text),
-        SizedBox(width: contentHeight + iconPaddingLeft + iconPaddingRight)
-      ];
+
+    List<Widget> children;
+    if (iconName == null) {
+      children = [text];
     } else {
-      children = [icon, Flexible(child: text)];
+      var icon = Padding(
+          padding: const EdgeInsets.only(
+              left: iconPaddingLeft,
+              right: iconPaddingRight),
+          child: SvgPicture.asset('assets/$iconName',
+              package: 'ensemble_auth',
+              height: contentHeight,
+              width: contentHeight));
+      if (buttonController.iconAlignment == IconAlignment.left) {
+        children = [
+          icon,
+          Expanded(child: text),
+          SizedBox(width: contentHeight + iconPaddingLeft + iconPaddingRight)
+        ];
+      } else {
+        children = [icon, Flexible(child: text)];
+      }
     }
 
     return SizedBox(

@@ -7,6 +7,7 @@ import 'package:ensemble/framework/error_handling.dart';
 import 'package:ensemble/framework/event.dart';
 import 'package:ensemble/framework/extensions.dart';
 import 'package:ensemble/framework/storage_manager.dart';
+import 'package:ensemble/framework/stub/oauth_controller.dart';
 import 'package:ensemble/framework/view/page.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
@@ -189,6 +190,7 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
     return buildGoogleSignInButton(
         mobileWidget: displayWidget ?? SignInButton(
             defaultLabel: SignInWithGoogleImpl.defaultLabel,
+            iconName: 'google_logo.svg',
             buttonController: widget._controller,
             onTap: _handleSignIn),
         onPressed: _handleSignIn);
@@ -196,7 +198,7 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
 
   String getClientId() {
     SignInCredential? credential =
-        Ensemble().getSignInServices()?.signInCredentials?[ServiceName.google];
+        Ensemble().getSignInServices()?.signInCredentials?[OAuthService.google];
     String? clientId;
     if (kIsWeb) {
       clientId = credential?.webClientId;
@@ -217,6 +219,6 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
       ? null
       : Ensemble()
           .getSignInServices()
-          ?.signInCredentials?[ServiceName.google]
+          ?.signInCredentials?[OAuthService.google]
           ?.serverClientId;
 }

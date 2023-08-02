@@ -1,24 +1,20 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
-import 'dart:developer' as developer;
 
 import 'package:crypto/crypto.dart';
 import 'package:ensemble/action/InvokeAPIController.dart';
 import 'package:ensemble/ensemble.dart';
 import 'package:ensemble/framework/action.dart';
 import 'package:ensemble/framework/error_handling.dart';
-import 'package:ensemble/framework/scope.dart';
+import 'package:ensemble/framework/storage_manager.dart';
 import 'package:ensemble/framework/stub/oauth_controller.dart';
 import 'package:ensemble/framework/stub/token_manager.dart';
-import 'package:ensemble/screen_controller.dart';
 import 'package:ensemble/util/http_utils.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
 class OAuthControllerImpl implements OAuthController {
   static const accessTokenKey = '_accessToken';
@@ -40,8 +36,13 @@ class OAuthControllerImpl implements OAuthController {
       }
     }
 
-    OAuthServicePayload? servicePayload = await getServicePayload(service);
+    ServiceCredentialPayload? servicePayload = getServicePayload(service);
     if (servicePayload != null) {
+      OAuthCredential? credential = servicePayload.credential.platformCredential;
+      if (credential == null) {
+        throw RuntimeError('OAuth Service is not correctly setup. Please check your configuration');
+      }
+
       String codeVerifier = _generateCodeVerifier();
       String codeChallenge = _generateCodeChallenge(codeVerifier);
       String state = generateState();
@@ -50,8 +51,8 @@ class OAuthControllerImpl implements OAuthController {
         ...uri.queryParameters,
         ...{
           'response_type': 'code',
-          'client_id': servicePayload.clientId,
-          'redirect_uri': servicePayload.redirectUri,
+          'client_id': credential.clientId,
+          'redirect_uri': credential.redirectUri,
           'scope': scope,
           'state': state,
           'code_challenge': codeChallenge,
@@ -62,7 +63,7 @@ class OAuthControllerImpl implements OAuthController {
       // authorize with the service
       final result = await FlutterWebAuth2.authenticate(
           url: uri.toString(),
-          callbackUrlScheme: servicePayload.redirectScheme);
+          callbackUrlScheme: credential.redirectScheme);
       final resultUri = Uri.parse(result);
       String? code = resultUri.queryParameters['code'];
       if (code != null && state == resultUri.queryParameters['state']) {
@@ -71,15 +72,15 @@ class OAuthControllerImpl implements OAuthController {
         OAuthServiceToken? token;
         if (tokenExchangeAPI == null) {
           token = await _getTokenFromClient(code: code,
-              codeVerifier: codeVerifier, servicePayload: servicePayload);
+              codeVerifier: codeVerifier, tokenURL: servicePayload.tokenURL,
+              service: service,
+              oauthCredential: credential);
         } else {
           token = await _getTokenFromServer(
               context,
               code: code,
               codeVerifier: codeVerifier,
-              tokenExchangeAPI: tokenExchangeAPI,
-              service: service,
-              servicePayload: servicePayload);
+              tokenExchangeAPI: tokenExchangeAPI);
         }
         if (token != null) {
           await storage.write(
@@ -110,8 +111,7 @@ class OAuthControllerImpl implements OAuthController {
   /// exchange OAuth code for token on the server
   Future<OAuthServiceToken?> _getTokenFromServer(BuildContext context,
       {required String code, required String codeVerifier,
-        required InvokeAPIAction tokenExchangeAPI,
-        required OAuthService service, required OAuthServicePayload servicePayload}) async {
+        required InvokeAPIAction tokenExchangeAPI}) async {
 
     try {
       Response response = await InvokeAPIController().executeWithContext(
@@ -123,7 +123,6 @@ class OAuthControllerImpl implements OAuthController {
       }
     } catch (error) {
       // should we give user access to error object?
-      developer.log(error.toString());
     }
     return null;
   }
@@ -154,19 +153,33 @@ class OAuthControllerImpl implements OAuthController {
   Future<OAuthServiceToken?> _getTokenFromClient({
       required String code,
       required String codeVerifier,
-      required OAuthServicePayload servicePayload}) async {
-    final response = await http.post(Uri.parse(servicePayload.tokenURL), body: {
-        'client_id': servicePayload.clientId,
-        'redirect_uri': servicePayload.redirectUri,
-        'grant_type': 'authorization_code',
-        'code': code,
-        'code_verifier': codeVerifier
-      });
-    var jsonResponse = json.decode(response.body);
-    if (jsonResponse != null) {
-      return OAuthServiceToken(
-          accessToken: jsonResponse['access_token'],
-          refreshToken: jsonResponse['refresh_token']);
+      required String tokenURL,
+      required OAuthService service,
+      required OAuthCredential oauthCredential}) async {
+
+    var body = {
+      'client_id': oauthCredential.clientId,
+      'redirect_uri': oauthCredential.redirectUri,
+      'grant_type': 'authorization_code',
+      'code': code,
+      'code_verifier': codeVerifier
+    };
+    // inject the client secret on Web
+    if (kIsWeb) {
+      String? webClientSecret = await StorageManager().readSecurely('services.oauth.${service.name}.web.clientSecret');
+      if (webClientSecret != null && webClientSecret.isNotEmpty) {
+        body['client_secret'] = webClientSecret;
+      }
+    }
+
+    final response = await http.post(Uri.parse(tokenURL), body: body);
+    if (response.statusCode >= 200 && response.statusCode <= 299) {
+      var jsonResponse = json.decode(response.body);
+      if (jsonResponse != null) {
+        return OAuthServiceToken(
+            accessToken: jsonResponse['access_token'],
+            refreshToken: jsonResponse['refresh_token']);
+      }
     }
     return null;
   }
@@ -177,93 +190,70 @@ class OAuthControllerImpl implements OAuthController {
     return base64Url.encode(raw);
   }
 
-  Future<OAuthServicePayload?> getServicePayload(OAuthService service) {
+  ServiceCredentialPayload? getServicePayload(OAuthService service) {
     if (service == OAuthService.google) {
-      return getGoogleServicePayload(offline: true);
+      return getGoogleServicePayload();
     } else if (service == OAuthService.microsoft) {
-      return getMicrosoftServicePayload(tenantId: 'f3a999e9-2d73-4a55-86fb-0f90c0294c5f');
+      return getMicrosoftServicePayload();
     } else if (service == OAuthService.yahoo) {
       return getYahooServicePayload();
     }
-    return Future.value(null);
+    return null;
   }
 
   /// These will come from our server
-  Future<OAuthServicePayload?> getGoogleServicePayload({required bool offline}) async {
-    APICredential? credential = _getAPICredential(ServiceName.google);
+  ServiceCredentialPayload? getGoogleServicePayload() {
+    ServiceCredential? credential = _getServiceCredential(OAuthService.google);
     if (credential != null) {
-      return Future.value(OAuthServicePayload(
+      bool offline = credential.config?['offline'] == true;
+      return ServiceCredentialPayload(
+          credential: credential,
           authorizationURL:
               "https://accounts.google.com/o/oauth2/v2/auth${offline ? '?access_type=offline&prompt=consent' : ''}",
-          tokenURL: "https://oauth2.googleapis.com/token",
-          clientId: credential.clientId,
-          redirectUri: credential.redirectUri,
-          redirectScheme: credential.redirectScheme));
+          tokenURL: "https://oauth2.googleapis.com/token");
     }
     return null;
   }
 
-  Future<OAuthServicePayload?> getMicrosoftServicePayload({required String tenantId}) async {
-    APICredential? credential = _getAPICredential(ServiceName.microsoft);
+  ServiceCredentialPayload? getMicrosoftServicePayload() {
+    ServiceCredential? credential = _getServiceCredential(OAuthService.microsoft);
     if (credential != null) {
-      return Future.value(OAuthServicePayload(
-          authorizationURL: 'https://login.microsoftonline.com/$tenantId/oauth2/v2.0/authorize',
-          tokenURL: 'https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token',
-          clientId: credential.clientId,
-          redirectUri: credential.redirectUri,
-          redirectScheme: credential.redirectScheme));
-    }
-    return null;
-  }
-
-  Future<OAuthServicePayload?> getYahooServicePayload() async {
-    APICredential? credential = _getAPICredential(ServiceName.yahoo);
-    if (credential != null) {
-      return Future.value(OAuthServicePayload(
-          authorizationURL: 'https://api.login.yahoo.com/oauth2/request_auth',
-          tokenURL: '// to be added',
-          clientId: credential.clientId,
-          redirectUri: credential.redirectUri,
-          redirectScheme: credential.redirectScheme));
-    }
-    return null;
-  }
-
-  APICredential? _getAPICredential(ServiceName serviceName) =>
-      Ensemble().getServices()?.apiCredentials?[serviceName];
-
-class OAuthServicePayload {
-  OAuthServicePayload(
-      {required this.authorizationURL,
-        required this.tokenURL,
-      required this.clientId,
-      String? redirectUri,
-      String? redirectScheme}) {
-    if (redirectUri == null) {
-      throw ConfigError(
-          "API's redirectUri not found. Please double check your config.");
-    }
-    this.redirectUri = redirectUri;
-
-    if (redirectUri.startsWith('https')) {
-      this.redirectScheme = 'https';
-    } else {
-      // redirect scheme is required for custom scheme
-      if (redirectScheme == null) {
-        throw ConfigError(
-            "API's redirectScheme is required for non-https scheme.");
+      String? tenantId = credential.config?['tenantId'];
+      if (tenantId == null) {
+        throw RuntimeError('tenantId is required for connecting to Microsoft.');
       }
-      this.redirectScheme = redirectScheme;
+      return ServiceCredentialPayload(
+          credential: credential,
+          authorizationURL: 'https://login.microsoftonline.com/$tenantId/oauth2/v2.0/authorize',
+          tokenURL: 'https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token');
     }
+    return null;
   }
 
+  ServiceCredentialPayload? getYahooServicePayload() {
+    ServiceCredential? credential = _getServiceCredential(OAuthService.yahoo);
+    if (credential != null) {
+      return ServiceCredentialPayload(
+          credential: credential,
+          authorizationURL: 'https://api.login.yahoo.com/oauth2/request_auth',
+          tokenURL: '// to be added'
+      );
+    }
+    return null;
+  }
+
+  ServiceCredential? _getServiceCredential(OAuthService service) =>
+      Ensemble().getServices()?.getServiceCredential(service);
+
+
+/// add authorization URL and token URL
+class ServiceCredentialPayload {
+  ServiceCredentialPayload({
+      required this.credential,
+      required this.authorizationURL,
+      required this.tokenURL});
+
+  ServiceCredential credential;
   String authorizationURL;
   String tokenURL;
-  String clientId;
-
-  // redirect can be https or a custom scheme e.g. myApp://
-  // if redirectURL is a https URL, its scheme must be 'https'
-  // if redirectURL is a custom scheme e.g. 'myApp://auth', its scheme should be e.g. 'myApp'
-  late String redirectUri;
-  late String redirectScheme;
 }

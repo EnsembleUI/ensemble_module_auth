@@ -1,5 +1,6 @@
 
 import 'package:ensemble/ensemble.dart';
+import 'package:ensemble/framework/stub/oauth_controller.dart';
 import 'package:ensemble/framework/stub/token_manager.dart';
 import 'package:ensemble/framework/storage_manager.dart';
 
@@ -11,7 +12,7 @@ class TokenManagerImpl implements TokenManager {
   }
 
   @override
-  Future<void> updateServiceTokens(ServiceName serviceName, String accessToken,
+  Future<void> updateServiceTokens(OAuthService serviceName, String accessToken,
       {String? refreshToken}) async {
     await StorageManager().writeSecurely(
         key: '${serviceName.name}_accessToken', value: accessToken);
@@ -22,7 +23,7 @@ class TokenManagerImpl implements TokenManager {
   }
 
   @override
-  Future<OAuthServiceToken?> getServiceTokens(ServiceName serviceName) async {
+  Future<OAuthServiceToken?> getServiceTokens(OAuthService serviceName) async {
     String? accessToken = await StorageManager().readSecurely('${serviceName.name}_accessToken');
     if (accessToken != null) {
       return OAuthServiceToken(
