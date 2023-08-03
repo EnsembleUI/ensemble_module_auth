@@ -125,9 +125,9 @@ class OAuthControllerImpl implements OAuthController {
           accessToken: response.body?['access_token'],
           refreshToken: response.body?['refresh_token']);
     } catch (error) {
-      rethrow;
       // should we give user access to error object?
     }
+    return null;
   }
 
 
