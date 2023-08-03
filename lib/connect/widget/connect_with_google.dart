@@ -1,6 +1,7 @@
 import 'package:ensemble/framework/action.dart';
 import 'package:ensemble/framework/stub/oauth_controller.dart';
 import 'package:ensemble/framework/stub/token_manager.dart';
+import 'package:ensemble/framework/view/page.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
 import 'package:ensemble/widget/helpers/controllers.dart';
@@ -51,30 +52,35 @@ class ConnectWithGoogleImpl extends StatefulWidget
   }
 }
 
-class ConnectWithGoogleController extends ConnectController{
+class ConnectWithGoogleController extends ConnectController {
 
 }
 
 class ConnectWithGoogleState extends WidgetState<ConnectWithGoogleImpl> {
+  Widget? _displayWidget;
 
   @override
-  void initState() {
-    super.initState();
-
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget._controller.widgetDef != null) {
+      _displayWidget = DataScopeWidget.getScope(context)
+          ?.buildWidgetFromDefinition(widget._controller.widgetDef);
+    }
   }
 
 
   @override
   Widget buildWidget(BuildContext context) {
-    return SignInButton(
-        defaultLabel: ConnectWithGoogleImpl.defaultLabel,
-        iconName: 'google_logo.svg',
-        buttonController: widget._controller,
-        onTap: startAuthFlow);
+    return _displayWidget != null
+        ? ConnectWidgetContainer(widget: _displayWidget!, onTap: startAuthFlow)
+        : SignInButton(
+            defaultLabel: ConnectWithGoogleImpl.defaultLabel,
+            iconName: 'google_logo.svg',
+            buttonController: widget._controller,
+            onTap: startAuthFlow);
   }
 
-  void startAuthFlow() async {
-    // a scope is required for Google
+  Future<void> startAuthFlow() async {
     List<String> scopes = ['openid'];
     if (widget._controller.initialScopes != null) {
       scopes.addAll(widget._controller.initialScopes!);

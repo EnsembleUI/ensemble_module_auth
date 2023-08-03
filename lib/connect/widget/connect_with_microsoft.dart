@@ -1,6 +1,7 @@
 import 'package:ensemble/framework/action.dart';
 import 'package:ensemble/framework/stub/oauth_controller.dart';
 import 'package:ensemble/framework/stub/token_manager.dart';
+import 'package:ensemble/framework/view/page.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
 import 'package:ensemble/widget/stub_widgets.dart';
@@ -55,24 +56,30 @@ class ConnectWithMicrosoftController extends ConnectController{
 }
 
 class ConnectWithMicrosoftState extends WidgetState<ConnectWithMicrosoftImpl> {
+  Widget? _displayWidget;
 
   @override
-  void initState() {
-    super.initState();
-
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget._controller.widgetDef != null) {
+      _displayWidget = DataScopeWidget.getScope(context)
+          ?.buildWidgetFromDefinition(widget._controller.widgetDef);
+    }
   }
 
 
   @override
   Widget buildWidget(BuildContext context) {
-    return SignInButton(
-        defaultLabel: ConnectWithMicrosoftImpl.defaultLabel,
-        iconName: 'microsoft_logo.svg',
-        buttonController: widget._controller,
-        onTap: startAuthFlow);
+    return _displayWidget != null
+        ? ConnectWidgetContainer(widget: _displayWidget!, onTap: startAuthFlow)
+        : SignInButton(
+          defaultLabel: ConnectWithMicrosoftImpl.defaultLabel,
+          iconName: 'microsoft_logo.svg',
+          buttonController: widget._controller,
+          onTap: startAuthFlow);
   }
 
-  void startAuthFlow() async {
+  Future<void> startAuthFlow() async {
     // a scope is required for Microsoft
     List<String> scopes = ['openid'];
     if (widget._controller.initialScopes != null) {
