@@ -115,15 +115,17 @@ class OAuthControllerImpl implements OAuthController {
         required InvokeAPIAction tokenExchangeAPI}) async {
 
     try {
-      Response response = await InvokeAPIController().executeWithContext(
+      Response? response = await InvokeAPIController().executeWithContext(
           context, tokenExchangeAPI, additionalInputs: { 'code': code, 'codeVerifier': codeVerifier });
       // even when server received the access/refresh tokens, it has the option
       // to NOT send them to us if it doesn't make sense (e.g.g client doesn't
       // make any API call). We'll still mark this call as success by returning
       // an empty token, unless there's an exception thrown
-      return OAuthServiceToken(
-          accessToken: response.body?['access_token'],
-          refreshToken: response.body?['refresh_token']);
+      if (response != null) {
+        return OAuthServiceToken(
+            accessToken: response.body?['access_token'],
+            refreshToken: response.body?['refresh_token']);
+      }
     } catch (error) {
       // should we give user access to error object?
     }
