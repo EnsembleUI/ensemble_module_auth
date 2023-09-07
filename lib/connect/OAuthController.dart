@@ -230,7 +230,7 @@ class OAuthControllerImpl implements OAuthController {
       }
       return ServiceCredentialPayload(
           credential: credential,
-          authorizationURL: 'https://login.microsoftonline.com/$tenantId/oauth2/v2.0/authorize',
+          authorizationURL: 'https://login.microsoftonline.com/$tenantId/oauth2/v2.0/authorize?prompt=select_account',
           tokenURL: 'https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token');
     }
     return null;
