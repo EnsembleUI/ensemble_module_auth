@@ -82,7 +82,7 @@ class ConnectWithGoogleState extends WidgetState<ConnectWithGoogleImpl> {
   }
 
   Future<void> startAuthFlow() async {
-    List<String> scopes = ['openid'];
+    List<String> scopes = [];
     if (widget._controller.initialScopes != null) {
       scopes.addAll(widget._controller.initialScopes!);
     }
