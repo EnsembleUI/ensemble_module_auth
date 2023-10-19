@@ -43,7 +43,7 @@ class AuthManager with UserAuthentication {
     } else if (user.provider == SignInProvider.firebase) {
       return _signInWithFirebase(context, user: user, idToken: idToken);
     } else if (user.provider == SignInProvider.auth0) {
-
+      return _updateCurrentUser(context, user);
     }
     // do nothing if don't know the provider
   }
