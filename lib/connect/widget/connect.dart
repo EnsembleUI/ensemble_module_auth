@@ -33,6 +33,8 @@ class ConnectController extends SignInButtonController {
 
   // these are initialized in the widget (as they need initiator)
   InvokeAPIAction? tokenExchangeAPI;
+  EnsembleAction? onInitiated;
+  EnsembleAction? onCanceled;
   EnsembleAction? onAuthorized;
   EnsembleAction? onError;
 
