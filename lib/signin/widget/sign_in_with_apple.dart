@@ -8,6 +8,7 @@ import 'package:ensemble/framework/event.dart';
 import 'package:ensemble/framework/extensions.dart';
 import 'package:ensemble/framework/model.dart';
 import 'package:ensemble/framework/storage_manager.dart';
+import 'package:ensemble/framework/stub/auth_context_manager.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
 import 'package:ensemble/util/utils.dart';
@@ -47,8 +48,6 @@ class SignInWithAppleImpl extends StatefulWidget
   Map<String, Function> setters() => {
         'provider': (value) => _controller.provider =
             SignInProvider.values.from(value),
-        'onAuthenticated': (action) => _controller.onAuthenticated =
-            EnsembleAction.fromYaml(action, initiator: this),
         'onSignedIn': (action) => _controller.onSignedIn =
             EnsembleAction.fromYaml(action, initiator: this),
         'onError': (action) => _controller.onError =
@@ -61,7 +60,6 @@ class SignInWithAppleImpl extends StatefulWidget
 
 class SignInWithAppleController extends SignInButtonController {
   SignInProvider? provider;
-  EnsembleAction? onAuthenticated;
   EnsembleAction? onSignedIn;
   EnsembleAction? onError;
 
@@ -112,32 +110,21 @@ class SignInWithAppleState extends WidgetState<SignInWithAppleImpl> {
 
     AuthenticatedUser user = _getAuthenticatedUser(credential);
 
-    // trigger the callback. This can be used to sign in on the server
-    if (widget._controller.onAuthenticated != null) {
-      ScreenController()
-          .executeAction(context, widget._controller.onAuthenticated!,
-          event: EnsembleEvent(widget, data: {
-            'user': user,
-
-            // server can verify and decode to get user info, useful for Sign In
-            'idToken': credential.identityToken
-          }));
-    }
-
 
     if (widget._controller.provider != SignInProvider.server) {
       // Apple don't have any access token related.
-      await AuthManager().signInWithCredential(
+      await AuthManager().signInWithSocialCredential(
           context,
           user: user,
-          idToken: credential.identityToken);
+          idToken: credential.identityToken!);
 
       // trigger onSignIn callback
       if (widget._controller.onSignedIn != null) {
         ScreenController()
             .executeAction(context, widget._controller.onSignedIn!,
             event: EnsembleEvent(widget, data: {
-              'user': user
+              'user': user,
+              'idToken': credential.identityToken,
             }));
       }
 
