@@ -27,7 +27,9 @@ class GoogleAuthManager {
       {List<String>? scopes,
       required GoogleSignInAccountCallback onAccountChanged}) async {
     // sign out (authorized scopes are still remembered the next sign in)
-    await _googleSignIn?.signOut();
+    if (_googleSignIn != null) {
+      await _googleSignIn?.signOut();
+    }
 
     // create a new instance and listen to account changes
     _googleSignIn = GoogleSignIn(

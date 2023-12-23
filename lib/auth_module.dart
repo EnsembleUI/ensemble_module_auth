@@ -13,7 +13,6 @@ import 'package:ensemble_auth/signin/widget/sign_in_with_apple.dart';
 import 'package:ensemble_auth/signin/widget/sign_in_with_auth0.dart';
 import 'package:ensemble_auth/signin/widget/sign_in_with_google.dart';
 import 'package:ensemble_auth/token_manager.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:get_it/get_it.dart';
 
 class AuthModuleImpl implements AuthModule {
