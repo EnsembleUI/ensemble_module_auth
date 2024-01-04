@@ -56,19 +56,17 @@ class SignInWithGoogleImpl extends StatefulWidget
   Map<String, Function> methods() => {};
 
   @override
-  Map<String, Function> setters() =>
-      {
+  Map<String, Function> setters() => {
         'widget': (widgetDef) => _controller.widgetDef = widgetDef,
         'provider': (value) =>
-        _controller.provider = SignInProvider.values.from(value),
-        'onSignedIn': (action) =>
-        _controller.onSignedIn =
+            _controller.provider = SignInProvider.values.from(value),
+        'onAuthenticated': (action) => _controller.onAuthenticated =
             EnsembleAction.fromYaml(action, initiator: this),
-        'onError': (action) =>
-        _controller.onError =
+        'onSignedIn': (action) => _controller.onSignedIn =
             EnsembleAction.fromYaml(action, initiator: this),
-        'scopes': (value) =>
-        _controller.scopes =
+        'onError': (action) => _controller.onError =
+            EnsembleAction.fromYaml(action, initiator: this),
+        'scopes': (value) => _controller.scopes =
             Utils.getListOfStrings(value) ?? _controller.scopes,
       };
 }
@@ -78,6 +76,7 @@ class SignInWithGoogleController extends SignInButtonController {
   List<String> scopes = [];
 
   SignInProvider? provider;
+  EnsembleAction? onAuthenticated;
   EnsembleAction? onSignedIn;
   EnsembleAction? onError;
 }
@@ -117,10 +116,21 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
       throw RuntimeError('Unable to retrieve an idToken for Google Sign In');
     }
 
+    // dispatch onAuthenticated since we have now authenticated the user
+    if (widget._controller.onAuthenticated != null) {
+      await ScreenController().executeAction(
+          context, widget._controller.onAuthenticated!,
+          event: EnsembleEvent(widget, data: {
+            'user': user,
+            'idToken': googleAuthentication.idToken
+          }));
+    }
+
     // Sign in with a custom Server
     if (widget._controller.provider == SignInProvider.server) {
       if (widget._controller.signInServerAPI == null) {
-        throw LanguageError("'signInServerAPI' is required when the provider is 'server' type.");
+        throw LanguageError(
+            "'signInServerAPI' is required when the provider is 'server' type.");
       }
       await AuthManager().signInWithServerCredential(context,
           user: user,
@@ -142,8 +152,7 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
 
     // trigger the callback. This can be used to sign in on the server
     if (widget._controller.onSignedIn != null) {
-      ScreenController()
-          .executeAction(context, widget._controller.onSignedIn!,
+      ScreenController().executeAction(context, widget._controller.onSignedIn!,
           event: EnsembleEvent(widget, data: {
             'user': user,
 
