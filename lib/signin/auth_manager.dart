@@ -60,7 +60,7 @@ class AuthManager with UserAuthentication {
       required SignInWithServerAPIAction signInAPI}) async {
     Response? response = await InvokeAPIController().executeWithContext(
         context, signInAPI,
-        additionalInputs: {'idToken': idToken});
+        additionalInputs: {'idToken': idToken, 'user': user});
     if (response != null) {
       // eval the server credentials and save to user object
       if (signInAPI.signInCredentials != null) {
