@@ -102,7 +102,7 @@ class ConnectWithMicrosoftState extends WidgetState<ConnectWithMicrosoftImpl> {
     try {
       token = await OAuthControllerImpl().authorize(
           context,
-          OAuthService.google,
+          OAuthService.microsoft,
           scope: ConnectUtils.getScopesAsString(scopes),
           forceNewTokens: true,   // this always force the flow again
           tokenExchangeAPI: widget._controller.tokenExchangeAPI);
