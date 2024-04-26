@@ -6,6 +6,7 @@ import 'package:ensemble/framework/action.dart';
 import 'package:ensemble/framework/error_handling.dart';
 import 'package:ensemble/framework/event.dart';
 import 'package:ensemble/framework/extensions.dart';
+import 'package:ensemble/framework/scope.dart';
 import 'package:ensemble/framework/storage_manager.dart';
 import 'package:ensemble/framework/stub/auth_context_manager.dart';
 import 'package:ensemble/framework/stub/oauth_controller.dart';
@@ -82,8 +83,6 @@ class SignInWithGoogleController extends SignInButtonController {
 }
 
 class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
-  Widget? displayWidget;
-
   @override
   void initState() {
     super.initState();
@@ -120,10 +119,8 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
     if (widget._controller.onAuthenticated != null) {
       await ScreenController().executeAction(
           context, widget._controller.onAuthenticated!,
-          event: EnsembleEvent(widget, data: {
-            'user': user,
-            'idToken': googleAuthentication.idToken
-          }));
+          event: EnsembleEvent(widget,
+              data: {'user': user, 'idToken': googleAuthentication.idToken}));
     }
 
     // Sign in with a custom Server
@@ -182,17 +179,13 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // build the display widget
+  Widget buildWidget(BuildContext context) {
+    Widget? displayWidget;
     if (widget._controller.widgetDef != null) {
       displayWidget = DataScopeWidget.getScope(context)
           ?.buildWidgetFromDefinition(widget._controller.widgetDef);
     }
-  }
 
-  @override
-  Widget buildWidget(BuildContext context) {
     return buildGoogleSignInButton(
         mobileWidget: displayWidget ??
             SignInButton(
