@@ -100,6 +100,9 @@ class ConnectWithGoogleState extends WidgetState<ConnectWithGoogleImpl> {
 
     OAuthServiceToken? token;
     try {
+      // Server doesn't always need to return a token if they don't want to,
+      // but we have code to create an empty token as needed.
+      // So null token here means some error occurs along the way
       token = await OAuthControllerImpl().authorize(
           context,
           OAuthService.google,
@@ -108,7 +111,7 @@ class ConnectWithGoogleState extends WidgetState<ConnectWithGoogleImpl> {
           tokenExchangeAPI: widget._controller.tokenExchangeAPI);
 
       // dispatch success
-      if (widget._controller.onAuthorized != null && token != null) {
+      if (token != null && widget._controller.onAuthorized != null) {
         ScreenController()
             .executeAction(context, widget._controller.onAuthorized!);
         return;

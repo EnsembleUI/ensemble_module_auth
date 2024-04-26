@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:developer' as dev;
 
 import 'package:crypto/crypto.dart';
 import 'package:ensemble/action/invoke_api_action.dart';
@@ -128,6 +129,7 @@ class OAuthControllerImpl implements OAuthController {
       }
     } catch (error) {
       // should we give user access to error object?
+      dev.log("Error retrieving token from server. $error");
     }
     return null;
   }
