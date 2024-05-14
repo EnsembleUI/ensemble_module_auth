@@ -45,7 +45,8 @@ class AuthManager with UserAuthentication {
       return _signInLocally(context, user: user);
     } else if (user.provider == SignInProvider.firebase) {
       return _signInWithFirebase(context, user: user, idToken: idToken);
-    } else if (user.provider == SignInProvider.auth0) {}
+    } 
+    // else if (user.provider == SignInProvider.auth0) {}
 
     return false;
   }
@@ -201,8 +202,8 @@ class AuthManager with UserAuthentication {
         if (customFirebaseApp != null) {
           await FirebaseAuth.instanceFor(app: customFirebaseApp!).signOut();
         }
-      } else if (user.provider == SignInProvider.auth0) {
-        await Auth0CredentialsManager().signOut();
+      // } else if (user.provider == SignInProvider.auth0) {
+      //   await Auth0CredentialsManager().signOut();
       } else {
         // If we don't use the provider, sign out with the signIn clients
         if (user.client == SignInClient.google) {

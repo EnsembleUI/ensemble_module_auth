@@ -9,7 +9,7 @@ import 'package:ensemble_auth/connect/widget/connect_with_microsoft.dart';
 import 'package:ensemble_auth/signin/auth_manager.dart';
 import 'package:ensemble_auth/signin/sign_in_anonymous.dart';
 import 'package:ensemble_auth/signin/widget/sign_in_with_apple.dart';
-import 'package:ensemble_auth/signin/widget/sign_in_with_auth0.dart';
+// import 'package:ensemble_auth/signin/widget/sign_in_with_auth0.dart';
 import 'package:ensemble_auth/signin/widget/sign_in_with_google.dart';
 import 'package:ensemble_auth/token_manager.dart';
 import 'package:get_it/get_it.dart';
@@ -22,7 +22,7 @@ class AuthModuleImpl implements AuthModule {
     GetIt.I.registerFactory<ConnectWithGoogle>(() => ConnectWithGoogleImpl());
     GetIt.I.registerFactory<ConnectWithMicrosoft>(
         () => ConnectWithMicrosoftImpl());
-    GetIt.I.registerFactory<SignInWithAuth0>(() => SignInWithAuth0Impl());
+    // GetIt.I.registerFactory<SignInWithAuth0>(() => SignInWithAuth0Impl());
     GetIt.I.registerSingleton<TokenManager>(TokenManagerImpl());
     GetIt.I.registerFactory<OAuthController>(() => OAuthControllerImpl());
     GetIt.I.registerFactory<SignInAnonymous>(() => SignInAnonymousImpl());
