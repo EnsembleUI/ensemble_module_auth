@@ -5,7 +5,9 @@ import 'package:ensemble/framework/action.dart';
 import 'package:ensemble/framework/error_handling.dart';
 import 'package:ensemble/framework/event.dart';
 import 'package:ensemble/framework/extensions.dart';
+import 'package:ensemble/framework/stub/auth_context_manager.dart';
 import 'package:ensemble/framework/stub/oauth_controller.dart';
+import 'package:ensemble/framework/view/data_scope_widget.dart';
 import 'package:ensemble/framework/view/page.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
@@ -147,7 +149,7 @@ class SignInWithAuth0ImplState extends WidgetState<SignInWithAuth0Impl> {
       AuthToken token = AuthToken(
             tokenType: TokenType.bearerToken,
             token: credentials.accessToken);
-      await AuthManager().signInWithCredential(
+      await AuthManager().signInWithSocialCredential(
           context,
           user: user,
           idToken: credentials.idToken,

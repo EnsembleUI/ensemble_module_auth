@@ -8,6 +8,7 @@ import 'package:ensemble/framework/event.dart';
 import 'package:ensemble/framework/extensions.dart';
 import 'package:ensemble/framework/model.dart';
 import 'package:ensemble/framework/storage_manager.dart';
+import 'package:ensemble/framework/stub/auth_context_manager.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
 import 'package:ensemble/util/utils.dart';
@@ -27,6 +28,7 @@ class SignInWithAppleImpl extends StatefulWidget
         HasController<SignInWithAppleController, SignInWithAppleState>
     implements ensemble.SignInWithApple {
   static const defaultLabel = 'Sign in with Apple';
+
   SignInWithAppleImpl({super.key});
 
   final SignInWithAppleController _controller = SignInWithAppleController();
@@ -45,8 +47,8 @@ class SignInWithAppleImpl extends StatefulWidget
 
   @override
   Map<String, Function> setters() => {
-        'provider': (value) => _controller.provider =
-            SignInProvider.values.from(value),
+        'provider': (value) =>
+            _controller.provider = SignInProvider.values.from(value),
         'onAuthenticated': (action) => _controller.onAuthenticated =
             EnsembleAction.fromYaml(action, initiator: this),
         'onSignedIn': (action) => _controller.onSignedIn =
@@ -55,7 +57,8 @@ class SignInWithAppleImpl extends StatefulWidget
             EnsembleAction.fromYaml(action, initiator: this),
 
         // styles only apply to default button
-        'buttonStyle': (value) => _controller.buttonStyle = SignInWithAppleButtonStyle.values.from(value)
+        'buttonStyle': (value) => _controller.buttonStyle =
+            SignInWithAppleButtonStyle.values.from(value)
       };
 }
 
@@ -67,12 +70,9 @@ class SignInWithAppleController extends SignInButtonController {
 
   // these styles apply only to default button
   SignInWithAppleButtonStyle? buttonStyle;
-
 }
 
 class SignInWithAppleState extends WidgetState<SignInWithAppleImpl> {
-
-
   @override
   Widget buildWidget(BuildContext context) {
     var button = AppleSignInButton(
@@ -109,48 +109,40 @@ class SignInWithAppleState extends WidgetState<SignInWithAppleImpl> {
     if (credential.identityToken == null) {
       throw RuntimeError('Invalid token.');
     }
-
     AuthenticatedUser user = _getAuthenticatedUser(credential);
 
-    // trigger the callback. This can be used to sign in on the server
     if (widget._controller.onAuthenticated != null) {
-      ScreenController()
-          .executeAction(context, widget._controller.onAuthenticated!,
-          event: EnsembleEvent(widget, data: {
-            'user': user,
-
-            // server can verify and decode to get user info, useful for Sign In
-            'idToken': credential.identityToken
-          }));
+      await ScreenController().executeAction(
+          context, widget._controller.onAuthenticated!,
+          event: EnsembleEvent(widget,
+              data: {'user': user, 'idToken': credential.identityToken}));
     }
-
 
     if (widget._controller.provider != SignInProvider.server) {
       // Apple don't have any access token related.
-      await AuthManager().signInWithCredential(
-          context,
-          user: user,
-          idToken: credential.identityToken);
+      await AuthManager().signInWithSocialCredential(context,
+          user: user, idToken: credential.identityToken!);
 
       // trigger onSignIn callback
       if (widget._controller.onSignedIn != null) {
         ScreenController()
             .executeAction(context, widget._controller.onSignedIn!,
-            event: EnsembleEvent(widget, data: {
-              'user': user
-            }));
+                event: EnsembleEvent(widget, data: {
+                  'user': user,
+                  'idToken': credential.identityToken,
+                }));
       }
-
     }
-
   }
 
   /// Note that Apple only send the name and email the first time, so it's
   /// important not to accidentally clear them out unless the user id is different.
-  AuthenticatedUser _getAuthenticatedUser(AuthorizationCredentialAppleID credential) {
+  AuthenticatedUser _getAuthenticatedUser(
+      AuthorizationCredentialAppleID credential) {
     // on Android the userIdentifier is not specified, so we need
     // to use the idToken's sub as the user ID
-    String? userId = credential.userIdentifier ?? _getUserId(credential.identityToken!);
+    String? userId =
+        credential.userIdentifier ?? _getUserId(credential.identityToken!);
     if (userId == null) {
       throw RuntimeError(
           'Error: The required user id is not provided by Apple.');

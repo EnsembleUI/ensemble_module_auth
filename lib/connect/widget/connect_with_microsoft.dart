@@ -1,6 +1,8 @@
+import 'package:ensemble/action/invoke_api_action.dart';
 import 'package:ensemble/framework/action.dart';
 import 'package:ensemble/framework/stub/oauth_controller.dart';
 import 'package:ensemble/framework/stub/token_manager.dart';
+import 'package:ensemble/framework/view/data_scope_widget.dart';
 import 'package:ensemble/framework/view/page.dart';
 import 'package:ensemble/framework/widget/widget.dart';
 import 'package:ensemble/screen_controller.dart';
@@ -10,6 +12,7 @@ import 'package:ensemble_auth/connect/widget/connect.dart';
 import 'package:ensemble_auth/signin/widget/sign_in_button.dart';
 import 'package:ensemble_ts_interpreter/invokables/invokable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class ConnectWithMicrosoftImpl extends StatefulWidget
     with
@@ -43,6 +46,10 @@ class ConnectWithMicrosoftImpl extends StatefulWidget
       'tokenExchangeAPI': (apiAction) => _controller.tokenExchangeAPI =
           apiAction == null ? null : InvokeAPIAction.fromYaml(
               initiator: this, payload: apiAction),
+      'onInitiated': (action) => _controller.onInitiated =
+          EnsembleAction.fromYaml(action, initiator: this),
+      'onCanceled': (action) => _controller.onCanceled =
+          EnsembleAction.fromYaml(action, initiator: this),
       'onAuthorized': (action) => _controller.onAuthorized =
           EnsembleAction.fromYaml(action, initiator: this),
       'onError': (action) => _controller.onError =
@@ -86,17 +93,34 @@ class ConnectWithMicrosoftState extends WidgetState<ConnectWithMicrosoftImpl> {
       scopes.addAll(widget._controller.initialScopes!);
     }
 
-    OAuthServiceToken? token = await OAuthControllerImpl().authorize(
-        context,
-        OAuthService.microsoft,
-        scope: ConnectUtils.getScopesAsString(scopes),
-        forceNewTokens: true,   // this always force the flow again
-        tokenExchangeAPI: widget._controller.tokenExchangeAPI);
-
-    // dispatch success
-    if (widget._controller.onAuthorized != null && token != null) {
+    if (widget._controller.onInitiated != null) {
       ScreenController()
-          .executeAction(context, widget._controller.onAuthorized!);
+          .executeAction(context, widget._controller.onInitiated!);
+    }
+
+    OAuthServiceToken? token;
+    try {
+      token = await OAuthControllerImpl().authorize(
+          context,
+          OAuthService.microsoft,
+          scope: ConnectUtils.getScopesAsString(scopes),
+          forceNewTokens: true,   // this always force the flow again
+          tokenExchangeAPI: widget._controller.tokenExchangeAPI);
+
+      // dispatch success
+      if (widget._controller.onAuthorized != null && token != null) {
+        ScreenController()
+            .executeAction(context, widget._controller.onAuthorized!);
+        return;
+      }
+    } catch (e) {
+      if (e is PlatformException && e.code == 'CANCELED') {
+        if (widget._controller.onCanceled != null) {
+          ScreenController()
+              .executeAction(context, widget._controller.onCanceled!);
+        }
+        return;
+      }
     }
 
     // dispatch error
