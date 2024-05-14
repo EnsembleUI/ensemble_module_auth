@@ -83,6 +83,35 @@ class AuthManager with UserAuthentication {
     return false;
   }
 
+  Future<bool> signInAnonymously(
+    BuildContext context,
+  ) async {
+    try {
+      customFirebaseApp ??= await _initializeFirebaseSignIn();
+      final _auth = FirebaseAuth.instanceFor(app: customFirebaseApp!);
+
+      UserCredential userCredential = await _auth.signInAnonymously();
+      User? user = userCredential.user;
+      if (user == null) {
+        print('Sign in anonymous failed');
+        return false;
+      }
+      Future<void> updateCurrentUser(BuildContext context, User newUser) async {
+        await StorageManager()
+            .writeToSystemStorage(UserAuthentication._idKey, newUser.uid);
+        await StorageManager()
+            .writeToSystemStorage(UserAuthentication._isAnonymous, true);
+      }
+
+      updateCurrentUser(context, user);
+
+      return true;
+    } catch (e) {
+      print(e.toString());
+      return false;
+    }
+  }
+
   Future<bool> _signInLocally(BuildContext context,
       {required AuthenticatedUser user, AuthToken? token}) async {
     // update the current user
@@ -254,6 +283,7 @@ mixin UserAuthentication {
   static const _tenantIdKey = 'user.tenantId';
   static const _creationTimeKey = 'user.creationTime';
   static const _lastSignInTimeKey = 'user.lastSignInTime';
+  static const _isAnonymous = 'user.isAnonymous';
 
   bool hasCurrentUser() => StorageManager().hasDataFromSystemStorage(_idKey);
 
@@ -276,6 +306,8 @@ mixin UserAuthentication {
         creationTime: StorageManager().readFromSystemStorage(_creationTimeKey),
         lastSignInTime:
             StorageManager().readFromSystemStorage(_lastSignInTimeKey),
+        isAnonymous:
+            StorageManager().readFromSystemStorage(_isAnonymous) ?? false,
       );
     }
     return null;
