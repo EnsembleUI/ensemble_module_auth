@@ -45,8 +45,9 @@ class AuthManager with UserAuthentication {
       return _signInLocally(context, user: user);
     } else if (user.provider == SignInProvider.firebase) {
       return _signInWithFirebase(context, user: user, idToken: idToken);
-    } else if (user.provider == SignInProvider.auth0) {}
-
+    } else if (user.provider == SignInProvider.auth0) {
+      _updateCurrentUser(context, user);
+    }
     return null;
   }
 
@@ -81,6 +82,35 @@ class AuthManager with UserAuthentication {
       return await _signInLocally(context, user: user);
     }
     return null;
+  }
+
+  Future<String?> signInAnonymously(
+    BuildContext context,
+  ) async {
+    try {
+      customFirebaseApp ??= await _initializeFirebaseSignIn();
+      final _auth = FirebaseAuth.instanceFor(app: customFirebaseApp!);
+
+      UserCredential userCredential = await _auth.signInAnonymously();
+      User? user = userCredential.user;
+      if (user == null) {
+        print('Sign in anonymous failed');
+        return null;
+      }
+      Future<void> updateCurrentUser(BuildContext context, User newUser) async {
+        await StorageManager()
+            .writeToSystemStorage(UserAuthentication._idKey, newUser.uid);
+        await StorageManager()
+            .writeToSystemStorage(UserAuthentication._isAnonymous, true);
+      }
+
+      updateCurrentUser(context, user);
+
+      return userCredential.credential?.accessToken;
+    } catch (e) {
+      print(e.toString());
+      return null;
+    }
   }
 
   Future<String?> _signInLocally(BuildContext context,
@@ -172,8 +202,8 @@ class AuthManager with UserAuthentication {
         if (customFirebaseApp != null) {
           await FirebaseAuth.instanceFor(app: customFirebaseApp!).signOut();
         }
-      } else if (user.provider == SignInProvider.auth0) {
-        await Auth0CredentialsManager().signOut();
+      // } else if (user.provider == SignInProvider.auth0) {
+      //   await Auth0CredentialsManager().signOut();
       } else {
         // If we don't use the provider, sign out with the signIn clients
         if (user.client == SignInClient.google) {
@@ -254,6 +284,7 @@ mixin UserAuthentication {
   static const _tenantIdKey = 'user.tenantId';
   static const _creationTimeKey = 'user.creationTime';
   static const _lastSignInTimeKey = 'user.lastSignInTime';
+  static const _isAnonymous = 'user.isAnonymous';
 
   bool hasCurrentUser() => StorageManager().hasDataFromSystemStorage(_idKey);
 
@@ -276,6 +307,8 @@ mixin UserAuthentication {
         creationTime: StorageManager().readFromSystemStorage(_creationTimeKey),
         lastSignInTime:
             StorageManager().readFromSystemStorage(_lastSignInTimeKey),
+        isAnonymous:
+            StorageManager().readFromSystemStorage(_isAnonymous) ?? false,
       );
     }
     return null;

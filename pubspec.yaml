@@ -43,7 +43,7 @@ dependencies:
   flutter_web_auth_2: ^2.1.4
   flutter_svg: ^2.0.7
   crypto: ^3.0.3
-  auth0_flutter: ^1.2.1
+  # auth0_flutter: ^1.2.1
 
 dev_dependencies:
   flutter_test:
