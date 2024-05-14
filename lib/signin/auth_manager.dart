@@ -45,9 +45,9 @@ class AuthManager with UserAuthentication {
       return _signInLocally(context, user: user);
     } else if (user.provider == SignInProvider.firebase) {
       return _signInWithFirebase(context, user: user, idToken: idToken);
-    } 
-    // else if (user.provider == SignInProvider.auth0) {}
-
+    } else if (user.provider == SignInProvider.auth0) {
+      return _updateCurrentUser(context, user);
+    }
     return false;
   }
 
