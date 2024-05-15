@@ -11,7 +11,7 @@ class SignInAnonymousImpl implements SignInAnonymous {
   Future<void> signInAnonymously(BuildContext context,
       {required SignInAnonymousAction action}) async {
     final isAuthenticated = await AuthManager().signInAnonymously(context);
-    if (isAuthenticated) {
+    if (isAuthenticated != null) {
       if (action.onAuthenticated != null) {
         AuthenticatedUser? currentUser = AuthManager().getCurrentUser();
         ScreenController().executeAction(context, action.onAuthenticated!,

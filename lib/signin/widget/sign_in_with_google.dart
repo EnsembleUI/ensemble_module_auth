@@ -120,7 +120,7 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
       await ScreenController().executeAction(
           context, widget._controller.onAuthenticated!,
           event: EnsembleEvent(widget,
-              data: {'user': user, 'idToken': googleAuthentication.idToken}));
+              data: {'user': user, 'idToken': idToken}));
     }
 
     // Sign in with a custom Server
@@ -143,7 +143,7 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
             tokenType: TokenType.bearerToken,
             token: googleAuthentication.accessToken!);
       }
-      await AuthManager().signInWithSocialCredential(context,
+      idToken = await AuthManager().signInWithSocialCredential(context,
           user: user, idToken: idToken, token: token);
     }
 
@@ -154,7 +154,7 @@ class SignInWithGoogleImplState extends WidgetState<SignInWithGoogleImpl> {
             'user': user,
 
             // server can verify and decode to get user info
-            'idToken': googleAuthentication.idToken,
+            'idToken': idToken,
 
             // server can exchange this for accessToken/refreshToken
             'serverAuthCode': account.serverAuthCode

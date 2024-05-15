@@ -37,7 +37,7 @@ class AuthManager with UserAuthentication {
   FirebaseApp? customFirebaseApp; // custom Firebase App
 
   /// Sign in with credentials from providers (e.g. Google, Apple) or via Firebase
-  Future<bool> signInWithSocialCredential(BuildContext context,
+  Future<String?> signInWithSocialCredential(BuildContext context,
       {required AuthenticatedUser user,
       required String idToken,
       AuthToken? token}) async {
@@ -49,13 +49,13 @@ class AuthManager with UserAuthentication {
     // else if (user.provider == SignInProvider.auth0) {
     //   return _updateCurrentUser(context, user);
     // }
-    return false;
+    return null;
   }
 
   /// After authenticated the user, redirect to a Server API with the idToken
   /// to retrieve Server-specific credentials (bearer, cookies,..). Once completed
   /// we sign the user in, and save the credentials to ${auth.user.data}
-  Future<bool> signInWithServerCredential(BuildContext context,
+  Future<String?> signInWithServerCredential(BuildContext context,
       {required AuthenticatedUser user,
       required String idToken,
       required SignInWithServerAPIAction signInAPI}) async {
@@ -82,10 +82,10 @@ class AuthManager with UserAuthentication {
       }
       return await _signInLocally(context, user: user);
     }
-    return false;
+    return null;
   }
 
-  Future<bool> signInAnonymously(
+  Future<String?> signInAnonymously(
     BuildContext context,
   ) async {
     try {
@@ -96,7 +96,7 @@ class AuthManager with UserAuthentication {
       User? user = userCredential.user;
       if (user == null) {
         print('Sign in anonymous failed');
-        return false;
+        return null;
       }
       Future<void> updateCurrentUser(BuildContext context, User newUser) async {
         await StorageManager()
@@ -107,14 +107,14 @@ class AuthManager with UserAuthentication {
 
       updateCurrentUser(context, user);
 
-      return true;
+      return userCredential.credential?.accessToken;
     } catch (e) {
       print(e.toString());
-      return false;
+      return null;
     }
   }
 
-  Future<bool> _signInLocally(BuildContext context,
+  Future<String?> _signInLocally(BuildContext context,
       {required AuthenticatedUser user, AuthToken? token}) async {
     // update the current user
     await _updateCurrentUser(context, user);
@@ -127,10 +127,10 @@ class AuthManager with UserAuthentication {
     //       key: "${user.provider}_accessToken", value: token.token);
     // }
 
-    return true;
+    return token?.token;
   }
 
-  Future<bool> _signInWithFirebase(BuildContext context,
+  Future<String?> _signInWithFirebase(BuildContext context,
       {required AuthenticatedUser user,
       required String idToken,
       AuthToken? token}) async {
@@ -149,7 +149,7 @@ class AuthManager with UserAuthentication {
 
     _enrichUserFromFirebase(user: user, firebaseInfo: firebaseUser);
     await _updateCurrentUser(context, user);
-    return true;
+    return await firebaseUser.getIdToken();
   }
 
   OAuthCredential _formatCredential(
